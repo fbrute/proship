@@ -4,7 +4,8 @@
   "description": "Mysql to json server",
   "main": "main.js",
   "scripts": {
-    "test": "docker-compose run spec"
+  "pretest": "eslint --ignore-path .gitignore .)"
+   "test": "docker-compose run spec"
   },
   "author": "",
   "license": "ISC",
