@@ -1,0 +1,21 @@
+{
+  "name": "shipup-server",
+  "version": "1.0.0",
+  "description": "Mysql to json server",
+  "main": "main.js",
+  "scripts": {
+    "test": "docker-compose run spec"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "morgan": "^1.9.1",
+    "mysql": "^2.16.0",
+    "pg": "^7.8.1"
+  },
+  "devDependencies": {
+    "eslint": "^5.14.1",
+    "eslint-config-strongloop": "^2.1.0"
+  }
+}
