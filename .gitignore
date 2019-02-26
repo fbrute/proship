@@ -1,4 +1,7 @@
 node_modules/
+spec/helpers/jasmine_examples/**/*
+spec/jasmine_examples/**/*
+lib/jasmine_examples/**/*
 
 # vim swap files
 *.swp

@@ -1,136 +1,137 @@
 'use strict';
 
-var fs = require('fs');
+// var contents = fs.readFileSync("modtfregressions_Guadeloup_Ocean_2012_50.json");
+// var regressions = JSON.parse(contents);
 
-//var contents = fs.readFileSync("modtfregressions_Guadeloup_Ocean_2012_50.json");
-//var regressions = JSON.parse(contents);
 
-var mysql      = require('mysql');
-
-const Pool = require('pg').Pool
-const pool = new Pool({
-  user: 'root',
-  host: 'localhost',
-  database: 'shipup',
-  //password: 'password',
-  port: 5432,
-})
-
-const getShipments = (request, response) => {
-    var query = require('url').parse(req.url,true).query;
-    var company_id = query.company_id;
-    console.log(company_id);
-
-  pool.query('SELECT * FROM shipments where company_id=' + company_id, (error, results) => {
-    if (error) {
-      throw error
-    }
-    response.status(200).json(results.rows)
-  })
-}
-
-var connection = mysql.createConnection({
-      host     : 'localhost',
-      user     : 'root',
-      password     : 'sinagfsh',
-      database : 'shipup_test',
-      port     : '3306'
-    });
-
-var getAotAroundData = function (params) {
-
-    connection.connect();
-    var stQuery = "SELECT n,ee from modtfregressions where area='" + params.area + "' and year=" + params.year + " and algo='" +  params.algo + "' and resolution=" + 
-        params.resolution + " and sat_origin='" + params.sat_origin + "' and aot_length=" + params.aot_length + " and aotaround='" + params.aotaround + "'";
-    console.log(stQuery);
-
-    connection.query(stQuery , function(err, rows, fields) {
-      if (err) throw err;
-        
-      console.log(rows);
-      return(rows[0]);
-    });
-
-    connection.end();
+const promise = require('bluebird');
+const initOptions = {
+  promiseLib: promise, // overriding the default (ES6 Promise);
 };
 
+
+
+const pgp = require('pg-promise')(initOptions);
+// See also: http://vitaly-t.github.io/pg-promise/module-pg-promise.html
+
+// Database connection details;
+const cn = {
+  host: 'localhost', // 'localhost' is the default;
+  port: 5432, // 5432 is the default;
+  database: 'shipup',
+  user: 'root',
+};
+
+const db = pgp(cn); // database instance;
+
 var express = require('express');
-var router = express.Router();
 var morgan = require('morgan');
 var port = 3000;
-var hostname ='localhost' 
+var hostname = 'localhost';
 var bodyParser = require('body-parser');
 
 var app = express();
 
-//var regRouter = express.Router();
+// var regRouter = express.Router();
 app.use(bodyParser.json());
 app.use(morgan('dev'));
 
 app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
   next();
 });
 
-//app.route('/Guadeloup/2012/Ocean/50')
-//.get(function (req, res, next) {
-//    res.json(regressions);
-//})
 
-
-app.get('/api/v1/shipments',
-    function (req, response,next) { 
-        var query = require('url').parse(req.url,true).query;
-        var company_id = query.company_id;
-        console.log(company_id);
-
-        pool.query('SELECT * FROM shipments where company_id=' + company_id, 
-            (error, results) => {
-        if (error) {
-            throw error;
-        }
-        response.setHeader('Content-Type', 'application/json');
-        response.statusCode = 200;
-        //response.status(200).json(results.rows);
-        // working all alone!!! response.status(200).json(results.rows);
-        var records = {}; 
-        records["records"] = JSON.stringify(results.rows) ;
-        console.log(records);
-        console.log(JSON.stringify(records).replace(/\\"/g, '"'));
-        //return( { "records" : response.status(200).json(results.rows) } );
-        //return( { records: results.rows } );
-        response.send(JSON.stringify(records).replace(/\\"/g, '"'));
-        //response.send(JSON.parse(records));
-
-
-        });
-    }
-)
-
-/*app.get('/api/v1/shipments', 
-    function (req, res,next) { 
-        var query = require('url').parse(req.url,true).query;
-        var company_id = query.company_id;
-        console.log(company_id);
-        connection.connect();
-        connection.query("SELECT * from shipment where company_id='" + company_id + "'",
-            function(err, rows, fields) {
-                if (err) throw err;
-                return( { records: res.json(rows) } );
+app.get('/api/v1/shipments_working', function(req, response, next) {
+  db.task(t => {
+    // execute a chain of queries against the task context, and return the result:
+    // return t.one('SELECT count(*) FROM shipments WHERE company_id = $1', 2, a => +a.count)
+    return t.none('select sp.id as sid, quantity, p.id as id, sku, description into temp table sp2' +
+        'from shipment_products sp inner join products p on sp.id = p.id', a => +a.count)
+      .then(count => {
+        if (count > 0) {
+          return t.any('SELECT * FROM products')
+            .then(logs => {
+              return {count, logs};
             });
-        connection.end();
+        }
+        return {count};
+      });
+  })
+    .then(data => {
+      // success, data = either {count} or {count, logs}
+      console.log(data);
+      response.status(200).json({ records: data });
+    })
+    .catch(error => {
+      console.log(error);
+    });
+});
 
-})
-*/
+app.get('/api/v1/shipments', function(req, response, next) {
+  // parsing the request parameters
+  var query = require('url').parse(req.url, true).query;
+  var company_id = query.company_id;
 
-// This responds with "Hello World" on the homepage
-//app.get('/api/v1/shipments/:company_id', function (req, res) {
-//   console.log("Got a GET request for the homepage");
-//   console.log(req.params.company_id);
-//  res.send('Hello GET');
-//})
+  if (typeof company_id == 'undefined' || Number(company_id) <= 0) {
+    response.status(422).json({ errors: ['company_id is required'] });
+  }
 
-app.listen(port, hostname, function(){
+  var transport_mode = query.international_transportation_mode;
+  var transport_mode_sql_filter
+  if (typeof transport_mode == 'undefined') {
+    transport_mode_sql_filter = '';
+  } else if ( transport_mode !== 'ocean' && transport_mode !== 'truck' ){
+    response.status(422).json({ errors: ['international transportation mode filter should be ocean or truck'] });
+  }
+  else {
+      transport_mode_sql_filter = ' and international_transportation_mode = ' + "'" +  transport_mode + "' " ;
+      console.log(transport_mode_sql_filter);
+  }
+  
+  // Handle pagination
+  var page = query.page || 1;
+  var per = query.per || 4;
+  var pagination_sql = ' LIMIT ' + per + ' OFFSET (' + page + ' - 1) * ' + per + ' '
+  console.log(pagination_sql);
+
+  console.log(Number(company_id));
+
+  
+  // default direction of sorting by international_departure_date is (asc)ending
+  var sort = query.sort || 'international_departure_date';
+  if (sort.toUpperCase() !== 'INTERNATIONAL_DEPARTURE_DATE') {
+    response.status(422).json({ errors: ['sorting field should be international_departure_date'] });
+  }
+
+  var direction = query.direction || 'asc';
+  const directionUp = direction.toUpperCase();
+
+  // Check sorting direction value
+  if (directionUp !== 'ASC' && directionUp !== 'DESC') {
+    response.status(422).json({ errors: ['sorting direction should be ASC or DESC'] });
+  }
+
+  console.log('company_id=' + company_id);
+  console.log('direction=' + direction);
+
+  
+  db.any("SELECT s.id as id, s.name as name ,json_agg(to_jsonb(sp) - 'sid') as products FROM shipments s, (select sp.shipment_id as sid, quantity, p.id as id, sku, description, row_number () over ( partition by sp.shipment_id) active_shipment_count from shipment_products sp, products p where sp.product_id = p.id) sp WHERE company_id = $1" + transport_mode_sql_filter + ' and sp.sid = s.id GROUP BY s.id order by ' + sort + ' ' + direction + pagination_sql , company_id)
+    .then(data => {
+      console.log(data);
+      response.status(200).json({ records: data });
+    })
+    .catch(error => {
+      // failed
+      console.log(error);
+    });
+});
+
+
+app.listen(port, hostname, function() {
   console.log(`Server running at http://${hostname}:${port}/`);
 });

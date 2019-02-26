@@ -1,22 +1,25 @@
 {
-  "name": "shipup-server",
+  "name": "shipupserver",
   "version": "1.0.0",
-  "description": "Mysql to json server",
+  "description": "PostgreSQL to json server",
   "main": "main.js",
   "scripts": {
-  "pretest": "eslint --ignore-path .gitignore .)"
-   "test": "docker-compose run spec"
+    "pretest": "eslint --fix --ignore-path .gitignore .",
+    "test": "docker-compose run spec"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.5.3",
     "express": "^4.16.4",
     "morgan": "^1.9.1",
     "mysql": "^2.16.0",
-    "pg": "^7.8.1"
+    "pg": "^7.8.1",
+    "pg-promise": "^8.5.6"
   },
   "devDependencies": {
     "eslint": "^5.14.1",
-    "eslint-config-strongloop": "^2.1.0"
+    "eslint-config-strongloop": "^2.1.0",
+    "prettier": "1.16.4"
   }
 }
