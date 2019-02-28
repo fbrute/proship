@@ -40,10 +40,10 @@ app.use(function(req, res, next) {
 
 app.get('/api/v1/shipments', function(req, response, next) {
   // parsing the request parameters
-  var query_parameters = require('url').parse(req.url, true).query;
+  var request_parameters = require('url').parse(req.url, true).query;
 
   // get the query string to be performed
-  var sql_query = require('./sql.js').shipment_build_sql(query_parameters);
+  var sql_query = require('./sql.js').shipment_build_sql(request_parameters);
 
 
   if (sql_query.errors['errors'].length > 0) {
@@ -52,7 +52,7 @@ app.get('/api/v1/shipments', function(req, response, next) {
 
     db.any(sql_query.string)
       .then(data => {
-        console.log(data);
+        //console.log(data);
         response.status(200).json({ records: data });
       })
       .catch(error => {

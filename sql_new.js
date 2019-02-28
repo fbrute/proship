@@ -70,3 +70,4 @@ exports.shipment_build_sql = function(request) {
 
   return sql_query;
 };
+
