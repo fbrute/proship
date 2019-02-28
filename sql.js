@@ -1,5 +1,6 @@
 // File sql.js
 // Organize an sql provider
+// build a string for a query to be performed by postgresql
 //
 'use strict';
 
@@ -57,7 +58,7 @@ function build_sql(sql_query) {
 
 
 exports.shipment_build_sql = function(request) {
-  // object to be receiving the results of the sql string building or errors
+  // object to be receiving the results of the sql string to build or errors
   var sql_query = { string: '', errors: { errors: []} ,
     params : {
       company_id : undefined , 
@@ -73,12 +74,9 @@ exports.shipment_build_sql = function(request) {
   validParamsSortingDirection(request, sql_query);
   validParamsPagination(request, sql_query);
 
-  console.log('length:' + sql_query.errors['errors'].length ); 
-
   if (sql_query.errors['errors'].length === 0) {
     sql_query.string = build_sql(sql_query);
   }
-
 
   return sql_query;
 };
